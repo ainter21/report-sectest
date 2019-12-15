@@ -12,6 +12,11 @@
 - **xss_fetchBrand.php_1_min** outputs the brand name, the availability and a button to edit or remove it. It is a xss vulnerability because the brand name with HTML malicious code.
   - **Attack vector**: create a brand with this name `<h1>Malicious</h1>`. It will be formatted as an `<h1>` item.
   - **Fix**: sanitize the name of the brand with `htmlentities`.
+- **xss_fetchCategories.php_1_min** fetchs al the categories created. The user with the right riviligies can inject malicious code in the category name and this will be printed as HTML formatted text. It is a vulnerability
+  - **Attack vector**: create a new category with this name: `<h1>Malicious</h1>`
+  - **Fix**: sanitize the output of tht query (`row[1]` contains the name of the category, so you have to call `htmlentities` on it). 
+
+
 ## False Positives
 
 - **xss_dashboard.php_3_min**: the echo function prints out the number of rows returned by the SQL query. There is no user input printed because this number is calculated by `mysqli_num_rows()` function. 
@@ -23,3 +28,10 @@
 - **xss_removeBrand.php_1_min**: `echo json_encode($valid);` outputs a strig that states the result status of an execution of a query. This string is not written by the user.
 - **xss_editBrand.php_1_min**: the echo funtion outputs a string not written by the user.
 - **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json oject used to populate the editBrand pop-up dialog box. However in the input text the text is not formated as HTML so the attacker can't exploit this echo call to insert malicious code, and the admin will be able to see the source code inserted by the attacker.
+![fetch selected Brand](./images/fetchselectedBrand.png)
+- **xss_editBrand.php_1_min**: it outputs a not modifiable string to confirm the quesy has been performed
+- **xss_createCategories.php_1_min**: the echo function prints a pre defined string used to tell the user the if the query has been performed
+- **xss_removeCategories.php_1_min**: the echo function prints if the query has been performed correctly or not. The user can't insert custom value for this string.
+- **fetchSelectedCategories.php_1_min**: the echo function populates the editCategory pop-up dialog, but the the name of the category is not formatted in HTML, but in palin text, so the attacke can't exploits this sink.
+- **xss_editCategories.php_1_min**: the echo function outputs a string written by the webmaster to confirm the edit category action has been performed correctly.
+- 
