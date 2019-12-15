@@ -22,4 +22,4 @@
 - **xss_createBrand.php_1_min**: `echo json_encode($valid);` outputs a string not written by the user that asserts that the query has been succesful.
 - **xss_removeBrand.php_1_min**: `echo json_encode($valid);` outputs a strig that states the result status of an execution of a query. This string is not written by the user.
 - **xss_editBrand.php_1_min**: the echo funtion outputs a string not written by the user.
-- 
+- **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json oject used to populate the editBrand pop-up dialog box. However in the input text the text is not formated as HTML so the attacker can't exploit this echo call to insert malicious code, and the admin will be able to see the source code inserted by the attacker.
