@@ -1,6 +1,6 @@
 # Report of XSS Vulnerabilities
 
-### Alberto Giust Mat. 211460
+### Alberto Giust ID 211460
 ### Security Testing
 ### Project: inventory-management-system
 
@@ -15,6 +15,9 @@
 - **xss_fetchCategories.php_1_min** fetchs al the categories created. The user with the right riviligies can inject malicious code in the category name and this will be printed as HTML formatted text. It is a vulnerability
   - **Attack vector**: create a new category with this name: `<h1>Malicious</h1>`
   - **Fix**: sanitize the output of tht query (`row[1]` contains the name of the category, so you have to call `htmlentities` on it). 
+- **xss_product.php_1_min**: this is a true sink because the query fetches all the brand to populate the select item for the creation of a new product. As a result, the attacker can create a brand with javascript code that won't be printed in the select option, but it will be executed when the page will be created. 
+  - **Attack vector**: create a brand with malicious javascript code in the name (`Malicious<script>alert("Hello)</script>"`) and load the product page. An alert message will be printed on the screen.
+  - **Fix**: sanitize the name of the brand with `htmlentities()`. However, in the product page the the list of brands are fetched two times so two alert dialogs will be shown. To completely fix this vulnerability it's needed to fix both of the outputs, this one and the one at line 267, which is found by pixy in the `xss_product.php_3_min` file. After fixing this vulnerability, no more alert dialogs will be shown, and the test will fail.
 
 
 ## False Positives
