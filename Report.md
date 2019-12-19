@@ -6,18 +6,21 @@
 
 ## True Positives
 
-- **xss_dashboard.php_10_min** outputs the username in the orders table. If the username is a HTML formatted string, it will be printed as it is without controls, so it can be used insert malicious code. The **User Wise Order** is only seen by the admin.
-  - **Attack vector**: change the username from user setting with HTML code
+- **xss_dashboard.php_10_min** (line 153) outputs the username in the orders table. If the username is a HTML formatted string, it will be printed as it is without controls, so it can be used insert malicious code. The **User Wise Order** is only seen by the admin.
+  - **Attack vector**: change the username from user setting with HTML code, logout and login again. The username will be printed as a `h1`
   - **Fix**: output the username after it has been sanitized with `htmlentities($orderResult['username'])`
-- **xss_fetchBrand.php_1_min** outputs the brand name, the availability and a button to edit or remove it. It is a xss vulnerability because the brand name with HTML malicious code.
-  - **Attack vector**: create a brand with this name `<h1>Malicious</h1>`. It will be formatted as an `<h1>` item.
+- **xss_fetchBrand.php_1_min** (line 38) outputs the brand name, the availability and a button to edit or remove it. It is a xss vulnerability because the brand name with HTML malicious code.
+  - **Attack vector**: create a brand with this name `Malicious<script>alert("brand")</script>`. After the creation of the brand, fetch brand will be called and the alert will be printed.
   - **Fix**: sanitize the name of the brand with `htmlentities`.
-- **xss_fetchCategories.php_1_min** fetchs al the categories created. The user with the right riviligies can inject malicious code in the category name and this will be printed as HTML formatted text. It is a vulnerability
-  - **Attack vector**: create a new category with this name: `<h1>Malicious</h1>`
+- **xss_fetchCategories.php_1_min** (line 38) fetches al the categories created. The user with the right priviligies can inject malicious code in the category name and this will be printed as HTML formatted text. It is a vulnerability
+  - **Attack vector**: create a new category with this name: `Malicious<script>alert("categories")<script>`. After the creation of the categorie, fetchCategories will be called and an alert will be shown.
   - **Fix**: sanitize the output of tht query (`row[1]` contains the name of the category, so you have to call `htmlentities` on it). 
-- **xss_product.php_1_min**: this is a true sink because the query fetches all the brand to populate the select item for the creation of a new product. As a result, the attacker can create a brand with javascript code that won't be printed in the select option, but it will be executed when the page will be created. 
+- **xss_product.php_1_min**: this is a true sink because the query fetches all the brand to populate the select item for the creation of a new product. As a result, the attacker can create a brand with javascript code that won't be printed in the select option, but it will be executed when the page will be created. Only `$row[1]` is affected because `$row[0]` contains the id of the brand, a value not set by the end user.
   - **Attack vector**: create a brand with malicious javascript code in the name (`Malicious<script>alert("Hello)</script>"`) and load the product page. An alert message will be printed on the screen.
   - **Fix**: sanitize the name of the brand with `htmlentities()`. However, in the product page the the list of brands are fetched two times so two alert dialogs will be shown. To completely fix this vulnerability it's needed to fix both of the outputs, this one and the one at line 267, which is found by pixy in the `xss_product.php_3_min` file. After fixing this vulnerability, no more alert dialogs will be shown, and the test will fail.
+- **xss_product.php_2_min**: if a category with malicious javascript code is created, when the user opens the product page, all categories are fetched to populate the select used to create a new product. The code is executed. Only `$row[1]` is affected because contains text inserted by the user, while `$row[1]` contains only the id of the category.
+  - **Attack vector**: create a category with javascript code in its name(`Malicious<script>alert("categories")</script>`). Then go to the product page. An alert dialog will pop up
+  - **Fix**: at line 127, calls `htmlentities` on `row[1]`. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 287, so you have to sanitize this line to avoid any alert message in the product page.
 
 
 ## False Positives
