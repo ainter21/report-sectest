@@ -33,6 +33,21 @@
     - rate: `10<script>alert("rate")</script>`
     - quantity: `10<script>alert("quantitiy")</script>`
     - brand and category: select `Malicious<script>alert("brand")</script>` and `Malicious<script>alert("name")</script>`
+    - image: not needed?
+  - TOFIX
+- **xss_fetchProductData.php_1_min**: it is called when the user adds one row for the product in the new order page.
+  - **Attack vector**: create a product with malicious javascript code in its name. Then go to `orders -> add new order` and add a row of product. An alert will pop up.
+  - **Fix**: sanitize the echo function calling this snippet of code before echoing the output. This code will sanitize the name.
+```php
+...
+if(mysqli_num_rows($result) > 0) { 
+
+    while($row =  mysqli_fetch_array($result)) {
+        $row[1] = htmlentities($row[1]);
+    }
+}
+...
+```
 
 
 ## False Positives
