@@ -48,6 +48,9 @@ if(mysqli_num_rows($result) > 0) {
 }
 ...
 ```
+- **xss_fetchOrder.php_1_min**: this method is called to retrieve all the orders. There are some fields that are vulnerable to xss attack. 
+  - **Attack vector**: create an order with malicious code in the `name` of the `client` and in the client. This code will be executed when the user goes to the orde page. The date iput field is not vulnerable because there is an automatic sanitisation.
+  - **Fix**: sanitize `$row[2]` and `$row[3]` of the array that is generated to return using `htmlentities()`.
 
 
 ## False Positives
@@ -69,3 +72,17 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_editCategories.php_1_min**: the echo function outputs a string written by the webmaster to confirm the edit category action has been performed correctly.
 - **xss_editProduct.php_1_min**: the echo funtion prints a message to state the query has been performed correctly. This message is not written by the user.
 - **xss_editProductImage.php_1_min**: the echo function print a message, not written by the user that states if the query has been successfully executed.
+- **xss_fetchProductImageUrl.php_1_min**: this php function is called when the user wants to edit the image. There is no way to inject malicious code into the name of the image because there is acontrol if the file has an image extension.
+![edit image](./images/editImage.png)
+- **xss_createProduct.php_1_min**: `echo json_encode($valid);` prints a confirmation message not written by the user with the result of th reatuin of the product.
+- **xss_removeProduct.php_1_min**: this echo function prints the result status of the query of removing a product, but this status is a string not written by the user.
+- - **xss_fetchSelectedProduct.php_1_min**: there is no way to inject malicious code via this echo function. <-------------CHECK----------->` $row[1]=htmlentities($row[1]);
+ $row[5]=htmlentities($row[5]);
+ $row[6]=htmlentities($row[6]);`
+- **xss_changeBio.php_1_min**: it prints a default message if the bio has been changed correctly. It is not written by the user.
+- **xss_changePassword.php_1_min**: it prints a default message, not written by the user.
+- **xss_changeUsername.php_1_min**: it prints a default message, not written by the user.
+- **xss_createOrder.php_1_min**: it prints a default message, not written by the user.
+- **xss_editOrder.php_1_min**: it prints a default message, not written by the user.
+- **xss_editPayment.php_1_min**: it prints a default message, not written by the user.
+- **xss_editUser.php_1_min**: it prints a default message, not written by the user.
