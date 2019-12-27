@@ -51,6 +51,15 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_fetchOrder.php_1_min**: this method is called to retrieve all the orders. There are some fields that are vulnerable to xss attack. 
   - **Attack vector**: create an order with malicious code in the `name` of the `client` and in the client. This code will be executed when the user goes to the orde page. The date iput field is not vulnerable because there is an automatic sanitisation.
   - **Fix**: sanitize `$row[2]` and `$row[3]` of the array that is generated to return using `htmlentities()`.
+- **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code ill be executed in the new window generated for the report list table. 
+  - **Attack vector**: create an order with code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.
+  - **Fix**: sanitize the table entries with `htmlentities()`.
+- **xss_orders.php_11_min**: this echo function is used to populate the select of the products in the orders page. By default, three select rows are generated, so this code is executed three times. If the admin created a product with malicious code in its name, this code will be executed. Only the name is vulnerable, because the id is not inserted by the user.
+  - **Attack vector**: create a product with javascript code in its name, then go to add orders page. Three dialog box will be shown.
+  - **Fix**: sanitize `$row['product_name']` with `htmlentities()`.
+- **xss_orders.php_21_min**: this echo function is used to populate the edit order page, more precisely it will output the name of the client. It can be exploited to inser malicious javascript code because it is not sanitized.
+  - **Attack vector**: create a new order with this string as the name of te client: `"/><script>alert("name")</script><input type="hidden"`. This will pop up an alert box.
+  - **Fix**: sanitize `$data[2]` with `htmlentities()`.
 
 
 ## False Positives
@@ -86,3 +95,8 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_editOrder.php_1_min**: it prints a default message, not written by the user.
 - **xss_editPayment.php_1_min**: it prints a default message, not written by the user.
 - **xss_editUser.php_1_min**: it prints a default message, not written by the user.
+- **xss_fetchOrderData.php_1_min**: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not prints the name of the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).
+- **xss_fetchSelectedUser.php_1_min**: this echo funtion return a json formatted object used to populate the editUser dialog box. If the name contains malicious code, it will bee printed in the input text, so there won't be any vulnerability, because also the HTML code will be printed, as plain text.
+- **xss_orders.php_6_min**: this echo function prints the id of the order the user is going to edit. The id of an order is not inserted by the user, so this is not a sink.
+- **xss_orders.php_20_min**: this echo function prints the date of the order. The date of the order is already sanitized because the input field for enetering the day acept only date format string.
+- 
