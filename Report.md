@@ -27,13 +27,13 @@
 - **xss_product.php_4_min** (line 287): as for product 2, also in this case if a category is created with malicious code in its name, this code will be executed when the client goes to the product page
   - **Attack vector**: create a category with javascript code in its name (`Malicious<script>alert("categories")</script>`). Then go to the product page. An alert dialog will pop up.
   - **Fix**: at line 286, calls `htmlentities` on `row[1]`. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 127, so you have to sanitize this line to avoid any alert message in the product page.
-- **xss_fetchProduct.php_1_min**: this echo function outputs data of each not removed product. If a product is created with malicious code in the name, rate and quantity, the code will be executed eache time this php code is called. Moreover, if the user has created malicious brand and category, also this would be exectuted.
-  - **Attack vector**: create a new product with malicious code in name, rate, quantity, and select a malicious brand and category, after creating it. A pop up dialog will be shown for each of the javascript code inserted
+- **xss_fetchProduct.php_1_min** (line 63, 65 & 67): this echo function outputs data of each not removed product. If a product is created with malicious code in the name, rate and quantity, the code will be executed eache time this php code is called. Moreover, if the user has created malicious brand and category, also this would be exectuted.
+  - **Attack vector**: create a new product with malicious code in name, rate, quantity, and select a brand and category. A pop up dialog will be shown for each of the javascript code inserted
     - name: `Malicious<script>alert("name")</script>`
     - rate: `10<script>alert("rate")</script>`
     - quantity: `10<script>alert("quantitiy")</script>`
-    - brand and category: select `Malicious<script>alert("brand")</script>` and `Malicious<script>alert("name")</script>`
-    - image: not needed?
+    - brand and category: `Apple` and `PC`
+    - image: not vulnerable
   - TOFIX
 - **xss_fetchProductData.php_1_min**: it is called when the user adds one row for the product in the new order page.
   - **Attack vector**: create a product with malicious javascript code in its name. Then go to `orders -> add new order` and add a row of product. An alert will pop up.
@@ -48,18 +48,30 @@ if(mysqli_num_rows($result) > 0) {
 }
 ...
 ```
-- **xss_fetchOrder.php_1_min**: this method is called to retrieve all the orders. There are some fields that are vulnerable to xss attack. 
+- **xss_fetchOrder.php_1_min** (line 56 & 58): this method is called to retrieve all the orders. There are some fields that are vulnerable to xss attack. 
   - **Attack vector**: create an order with malicious code in the `name` of the `client` and in the client. This code will be executed when the user goes to the orde page. The date iput field is not vulnerable because there is an automatic sanitisation.
   - **Fix**: sanitize `$row[2]` and `$row[3]` of the array that is generated to return using `htmlentities()`.
-- **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code ill be executed in the new window generated for the report list table. 
-  - **Attack vector**: create an order with code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.
+- **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code will be executed in the new window generated for the report list table. 
+  - **Attack vector**: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.
   - **Fix**: sanitize the table entries with `htmlentities()`.
 - **xss_orders.php_11_min**: this echo function is used to populate the select of the products in the orders page. By default, three select rows are generated, so this code is executed three times. If the admin created a product with malicious code in its name, this code will be executed. Only the name is vulnerable, because the id is not inserted by the user.
   - **Attack vector**: create a product with javascript code in its name, then go to add orders page. Three dialog box will be shown.
   - **Fix**: sanitize `$row['product_name']` with `htmlentities()`.
-- **xss_orders.php_21_min**: this echo function is used to populate the edit order page, more precisely it will output the name of the client. It can be exploited to inser malicious javascript code because it is not sanitized.
+- **xss_orders.php_21_min** (line 293): this echo function is used to populate the edit order page, more precisely it will output the name of the client. It can be exploited to inser malicious javascript code because it is not sanitized.
   - **Attack vector**: create a new order with this string as the name of te client: `"/><script>alert("name")</script><input type="hidden"`. This will pop up an alert box.
   - **Fix**: sanitize `$data[2]` with `htmlentities()`.
+- **xss_orders.php_22_min**(line 299): this echo function prints the contact name into an input field, used to edit the current order. It is vulnerable to xss attacks because it is not sanitized.
+  - **Attack vector**: create a new order with this client contact: `"/><script>alert("contact")</script><input type="hidden"`, then go to edit order page. An alert will be shown up.
+  - **Fix**: sanitize `$data[3]` with `htmlentities()`.
+- **xss_orders.php_27_min** (line 345): this echo function is used to populate the select created in the edit order page. If there is a product with malicious code int its name, this code will be executed.
+  - **Attack vector**: create a product with this name: `Malicious<script>alert("name")</script>`. Go to orders page and edit one order. An alert with `name` string in it will be shown.
+  - **Fix**:sanitize `$row['product_name']` with `htmlentities()`.
+- **xss_orders.php_29_min** (line 353): this echo function is used to populate the selector of products in the edi order page. It is vulnerable because, even if it is not possible to crte an order with a product with a wrong rate value, it is possible to add a product to the order with malicious code.
+  - **Attack vector**: create a product with javascript code in its rate (`"/><script>alert("hello")</script><input type="hidden"`). Create a new order (don't use this product). Edit the order and add the malicious product. Edit again the order: an alert message will pop up
+  - **Fix**: sanitize `$orderItemData['rate']` with `htmlentities()`.
+- **xss_orders.php_31_min**: as for the previous one, this echo function is used to populate the selector of products, but this input is `hidden`.
+  - **Attack vector**: create a product with javascript code in its rate (`"/><script>alert("hello")</script><input type="hidden"`). Create a new order (don't use this product). Edit the order and add the malicious product. Edit again the order: an alert message will pop up
+  - **Fix**: sanitize `$orderItemData['rate']` with `htmlentities()`.
 
 
 ## False Positives
