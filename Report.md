@@ -69,9 +69,39 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_orders.php_29_min** (line 353): this echo function is used to populate the selector of products in the edi order page. It is vulnerable because, even if it is not possible to crte an order with a product with a wrong rate value, it is possible to add a product to the order with malicious code.
   - **Attack vector**: create a product with javascript code in its rate (`"/><script>alert("hello")</script><input type="hidden"`). Create a new order (don't use this product). Edit the order and add the malicious product. Edit again the order: an alert message will pop up
   - **Fix**: sanitize `$orderItemData['rate']` with `htmlentities()`.
-- **xss_orders.php_31_min**: as for the previous one, this echo function is used to populate the selector of products, but this input is `hidden`.
+- **xss_orders.php_31_min** (line 354): as for the previous one, this echo function is used to populate the selector of products, but this input is `hidden`.
   - **Attack vector**: create a product with javascript code in its rate (`"/><script>alert("hello")</script><input type="hidden"`). Create a new order (don't use this product). Edit the order and add the malicious product. Edit again the order: an alert message will pop up
   - **Fix**: sanitize `$orderItemData['rate']` with `htmlentities()`.
+- **xss_orders.php_35_min** (line 380): in this case, if the user changes the type of the input quantity and insert javascript code and he refreshes the page, the code will be executed.
+  - **Attack vector**: create an order, then go to edit order. Use javascript to change the type of th quantity input to `text` and change the value with this string `"\"/><script>alert(\"quantity\")</script><input type=\"hidden\"`. Refresh the page: a dialog box will pop up
+  - **Fix**: sanitize `$orderItemData['quantity']` with `htmlentities()`.
+- **xss_orders.php_37_min** (line 384): this echo function prints the total amount of the product in the edit order page. This value can be changed in the addOrder, when the user add a product. There are tw input: one disabled, to show the result, and one hidden to pass the value to the server. The attacker can change the hidden value, and inser malicious code.
+  - **Attack vector**: create a new order and using senenium executeScript function, set the value of the hidden parameter with this string `11"/><script>alert("hello")</script><input type="hidden"`. Then go to the edit order page. An alert will pop up
+  - **Fix**: sanitize the output: `htmlentities($orderItemData['total'])`.
+- **xss_orders.php_39_min** (line 385): this has the same vulnerability as **xss_orders.php_37_min**.
+  - **Attack vector**: same as **xss_orders.php_37_min**.
+  - **Fix**: same as **xss_orders.php_37_min**. 
+- **xss_orders.php_41_min**: this echo function populates a disabled input used to show the sub amount of the order, in the edit order page.
+  - **Attack vector** (line 404): create a new order and with javascript change the value of the subAmount hidden input to `"/><script>alert("subAmountValue")</script><input type="hidden"`. Then go to edit order. A pop up will show up
+  - **Fix**: sanitize with `htmlentities()`.
+- **xss_orders.php_42_min** (line 405): this has the same procedure of **xss_orders.php_41_min**, but the input is not disebled, but hidden.
+  - **Attack vector**: same as **xss_orders.php_41_min**
+  - **Fix**: same as **xss_orders.php_41_min**
+- **xss_orders.php_43_min** (line 412): this is the same vulnerability of of the previous ones: in this case the value exploitable is the Total Amount. This prints the value into a disable input.
+  - **Attack vector**: create an order and inject using javascript malicious code into the Total Amount hidden input `"/><script>alert("total amount")</script><input type="hidden"`. Then go to the edit order page, and the code will be executed.
+  - **Fix**: sanitize the output with `htmlentities()`.
+- **xss_orders.php_44_min** (line 413): this echo function prints the same content as **xss_orders.php_43_min**, but the input populated is hidden, instead of disabled.
+  - **Attack vector**: same as **xss_orders.php_43_min**.
+  - **Fix**: same as **xss_orders.php_43_min**.
+- **xss_orders.php_45_min** (line 419): this echo function is used to print the discount value to the input in the edit order page. It is vulnerable to xss.
+  - **Attack vector**: create a new order and insert into the discount value this string `"\"/><script>alert(\"discount\")</script><input type=\"hidden\""`. Then, go to the edit order page. An alert will pop up
+  - **Fix**: sanitize the input of the echo function with `htmlentities()`.
+- **xss_orders.php_46_min** (line 425): this echo function prints the Grand Total in the edit order page, more precisely in the disabled input field. It is vulnerable because this value can be changed during the creation of an order.
+  - **Attack vector**: create a new order and change the Grand Total value using javascript, and substitute it with `\"/><script>alert(\"grandTotalValue\")</script><input type=\"hidden\"`. Then go to the edit order page. An alert will pop up.
+  - **Fix**: sanitize the parameter with `htmlentities()`.
+- **xss_orders.php_47_min** (line 426): this echo function prints the same content of **xss_orders.php_46_min**, but in an hidden input field. The vulnerability and the fix are the same
+  - **Attack vector**: same as **xss_orders.php_46_min**.
+  - **Fix**: same as **xss_orders.php_46_min**.  
 
 
 ## False Positives
@@ -107,8 +137,8 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_editOrder.php_1_min**: it prints a default message, not written by the user.
 - **xss_editPayment.php_1_min**: it prints a default message, not written by the user.
 - **xss_editUser.php_1_min**: it prints a default message, not written by the user.
-- **xss_fetchOrderData.php_1_min**: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not prints the name of the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).
+- **xss_fetchOrderData.php_1_min**: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not prints the name or the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).
 - **xss_fetchSelectedUser.php_1_min**: this echo funtion return a json formatted object used to populate the editUser dialog box. If the name contains malicious code, it will bee printed in the input text, so there won't be any vulnerability, because also the HTML code will be printed, as plain text.
 - **xss_orders.php_6_min**: this echo function prints the id of the order the user is going to edit. The id of an order is not inserted by the user, so this is not a sink.
 - **xss_orders.php_20_min**: this echo function prints the date of the order. The date of the order is already sanitized because the input field for enetering the day acept only date format string.
-- 
+- **xss_orders.php_32_min**: there is no way to inject malicious code int the available quantity paragraph created in the edi order page, because you can't create an order with corrupted quantity and if you try to insert it later with the edit order form, this quantity is not loaded.

@@ -1,3 +1,16 @@
-orders_32
 orders_35
 getOrderReport_1
+
+
+Malicious<script>alert("name")</script>
+10<script>alert("quantitiy")</script>
+10<script>alert("rate")</script>
+
+"/><script>alert("hello")</script><input type="hidden"
+1"><script>alert("hello")</script>
+11&quot;/><script>alert(&quot;hello&quot;)</script><input type=&quot;hidden&quot;
+
+
+- **xss_orders.php_21_min**: this is a vulnerable ouptput because the name of the client can be exploited to insert malicious javascript code. When the user goes to manage orders page, this code will be executed
+  - **Attack vector**: create an order with javascript code in the name of the client, then go to manage orders page. An alret dialog box will be shown.
+  - **Fix**: sanitize the output `$data[2]` with `htmlentities()`
