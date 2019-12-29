@@ -54,6 +54,9 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code will be executed in the new window generated for the report list table. 
   - **Attack vector**: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.
   - **Fix**: sanitize the table entries with `htmlentities()`.
+- **xss_orders.php_6_min** (line 37): this echo function prints the id of the order to be edit. This id is directly taken from the query parameter. The attacker can insert some code into this parameter to perform an xss attack.
+  - **Attack vector**: use selenium to navigate to this link: `http://localhost/inventory-management-system/orders.php?o=editOrd&i=8<script>alert(\"id\")</script>`. An alert will pop up.
+  - **Fix**:sanitize the input with `htmlentities()`
 - **xss_orders.php_11_min**: this echo function is used to populate the select of the products in the orders page. By default, three select rows are generated, so this code is executed three times. If the admin created a product with malicious code in its name, this code will be executed. Only the name is vulnerable, because the id is not inserted by the user.
   - **Attack vector**: create a product with javascript code in its name, then go to add orders page. Three dialog box will be shown.
   - **Fix**: sanitize `$row['product_name']` with `htmlentities()`.
@@ -101,7 +104,44 @@ if(mysqli_num_rows($result) > 0) {
   - **Fix**: sanitize the parameter with `htmlentities()`.
 - **xss_orders.php_47_min** (line 426): this echo function prints the same content of **xss_orders.php_46_min**, but in an hidden input field. The vulnerability and the fix are the same
   - **Attack vector**: same as **xss_orders.php_46_min**.
-  - **Fix**: same as **xss_orders.php_46_min**.  
+  - **Fix**: same as **xss_orders.php_46_min**.
+- **xss_orders.php_50_min** (line 432): this echo function prints the VAT in the disable input in the edit order page. It will execute code if, during the creation of the event the attacker put some code in the input field, bypassing html restriction.
+  - **Attack vector**: create a new order and insert in the VAT hidden input this string: `"/><script>alert("VAT")</script><input type="hidden"`. Then, go to the edit order page, and an alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_orders.php_51_min** (line 433): this echo function prints the same value of the function above, but in a hidden input field.
+  - **Attack vector**: same as **xss_orders.php_50_min**.
+  - **Fix**: same as **xss_orders.php_50_min**.
+- **xss_orders.pgp_52_min**: thsi ech functio prints the *gstn* in the edit order page. There is no way to insert this value during the creation of an order, so it is mandatory to create an order, edit it inserting in this input field some code, and refresh the page.
+  - **Attack vector**: edit an existing order. Isert in the *gstn* field this string `"/><script>alert("hello")</script><input type="hidden"`. Refresh the page. An alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_orders.php_53_min** (line 448): the echo function prints the value of the paid amount. It can be explioted inserting during the add order, some malicious javascript code. It will be save in the database, and in opening the edit order page, this code will be executed.
+  - **Attack vector**: create a new order and insert in the input field *Paid Amount* this string `"/><script>alert("paid amount")</script><input type="hidden"`. This code will be executed when opening the edit order page.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_orders.php_54_min** (line 454): this echo function populates the disabled input of *Due Amount*.
+  - **Attack vector**: create a new order and use javascript in selenium to populate the hidden input *dueValue* with this string: `"/><script>alert("due value")</script><input type="hidden"`. Then go to edit order page. An alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_orders.php_55_min** (line 455): the echo function prints the same value of  **xss_orders.php_54_min**, but in a hidden input field.
+  - **Attack vector**: same procedure of  **xss_orders.php_54_min**.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_orders.php_64_min** (line 513): this echo funtions prints the id of the order into the value of the submit button for editing the order. As for **xss_orders.php_6_min**, the id can be passed via query parameter, but the code has to be slightly different.
+  - **Attack vector**: login and go to edit page of an order using `driver.get()`, passing this URL: `http://localhost/inventory-management-system/orders.php?o=editOrd&i=8\"/><script>alert(\"hello\")</script><input type=\"hidden\"`. An alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`. 
+- **xss_printOrder.php_1_min** (line 193): this echo function prints a table created with details of the order. Some variables are printed, and they are exploitable by an attacker who wants to inject malicious code in the print page. 
+  - **Attack vector**: create an order and then edit it with the following values.
+    - **clientName**: `<h1 id=\"malicious_name\">name</h1>`.
+    - **clientContact**: `<h1 id=\"malicious_contact\">1234</h1>`.
+    - **total value of the item ordered**: `\"/><h1 id=\"malicious_product\">1234</h1>`.
+    - **subTotal**: `\"/><h1 id=\"malicious_subtotal\">988</h1>`.
+    - **gstn**: `\"/><h1 id=\"malicious_gstn\">333</h1>`.
+    
+    Alert aren't used in these test because selenium has difficulties in handling alerts in differents windows. However, these `h1` items will be shown in the print page.
+  - **Fix**: sanitize the input of these variables with `htmlentities()`.
+- **xss_setting.php_1_min** (line 35): this echo function is used to populate the edit username input field. It is vulnerable to xss attack.
+  - **Attack vector**: go to setting page, change the username with this string: `admin"/><script>alert("hello")</script><input type="hidden"`. Save the changes and refresh the page. An alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`.
+- **xss_setting.php_3_min** (line 57): as for **xss_setting.php_1_min**, also this echo function pouplate an input field in the setting page, more precisely the bio input filed. It is vulnerable to xss.
+  - **Attack vector**: go to setting page, change the bio with this string: `bio"/><script>alert("hello")</script><input type="hidden"`. Save the changes and refresh the page. An alert will pop up.
+  - **Fix**: sanitize the input with `htmlentities()`.
 
 
 ## False Positives
@@ -139,6 +179,10 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_editUser.php_1_min**: it prints a default message, not written by the user.
 - **xss_fetchOrderData.php_1_min**: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not prints the name or the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).
 - **xss_fetchSelectedUser.php_1_min**: this echo funtion return a json formatted object used to populate the editUser dialog box. If the name contains malicious code, it will bee printed in the input text, so there won't be any vulnerability, because also the HTML code will be printed, as plain text.
-- **xss_orders.php_6_min**: this echo function prints the id of the order the user is going to edit. The id of an order is not inserted by the user, so this is not a sink.
 - **xss_orders.php_20_min**: this echo function prints the date of the order. The date of the order is already sanitized because the input field for enetering the day acept only date format string.
 - **xss_orders.php_32_min**: there is no way to inject malicious code int the available quantity paragraph created in the edi order page, because you can't create an order with corrupted quantity and if you try to insert it later with the edit order form, this quantity is not loaded.
+- **xss_removeUser.php_1_min**: this echo function outputs a message not written by the user, so it is not vulnerable to xss attacks.
+- **xss_setting.php_2_min**: this echo function prints the user id retrieved from the `$_SESSION` array. It is set on the server side and it is not possible to access it from client side.
+-  **xss_setting.php_4_min**: as for **xss_setting.php_2_min**, also this echo functon populate an input field with the user id, retrieved from the `$_SESSION` array, created and handled server side.
+-  **xss_setting.php_5_min**: this echo function populate an input field with the user id, retrieved from the `$_SESSION` array, so it is not vulnerable.
+-  **xss_ssp.php_1_min**: it is an example of a library file. It is not used in the website.
