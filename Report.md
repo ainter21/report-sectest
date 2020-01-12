@@ -4,6 +4,9 @@
 ### Security Testing
 ### Project: inventory-management-system
 
+
+This report goal is to find XSS vulnerabilities in the project `inventory-management-system`. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attak vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.
+
 ## True Positives
 
 - **xss_dashboard.php_10_min** (line 153): outputs the username in the orders table. If the username is a HTML formatted string, it will be printed as it is without controls, so it can be used insert malicious code. The **User Wise Order** is only seen by the admin.
