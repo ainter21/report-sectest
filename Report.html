@@ -25,7 +25,8 @@
 <h3 id="alberto-giust-id-211460">Alberto Giust ID 211460</h3>
 <h3 id="security-testing">Security Testing</h3>
 <h3 id="project-inventory-management-system">Project: inventory-management-system</h3>
-<p>This report goal is to find XSS vulnerabilities in the project <code>inventory-management-system</code>. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attak vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.</p>
+<p>This report goal is to find XSS vulnerabilities in the project <code>inventory-management-system</code>. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.
+All the test were created with an already populated database, and then every test was changed to clean and repopulate every time the database. The products created directly from Java have the default image.</p>
 <h2 id="true-positives">True Positives</h2>
 <ul>
 <li><strong>xss_dashboard.php_10_min</strong> (line 153): outputs the username in the orders table. If the username is a HTML formatted string, it will be printed as it is without controls, so it can be used insert malicious code. The <strong>User Wise Order</strong> is only seen by the admin.
@@ -52,10 +53,10 @@
 <li><strong>Fix</strong>: sanitize the name of the brand with <code>htmlentities()</code>. However, in the product page the the list of brands are fetched two times so two alert dialogs will be shown. To completely fix this vulnerability it is necessary to fix both of the outputs, this one and the one at line 267, which is found by pixy in the <code>xss_product.php_3_min</code> file. After fixing this vulnerability, no more alert dialogs will be shown, and the test will fail.</li>
 </ul>
 </li>
-<li><strong>xss_product.php_2_min</strong> (line 127): if a category with malicious javascript code is created, when the user opens the product page, all categories are fetched to populate the select used to create a new product. The code is executed. Only <code>$row[1]</code> is affected because contains text inserted by the user, while <code>$row[1]</code> contains only the id of the category.
+<li><strong>xss_product.php_2_min</strong> (line 128): if a category with malicious javascript code is created, when the user opens the product page, all categories are fetched to populate the select used to create a new product. The code is executed. Only <code>$row[1]</code> is affected because contains text inserted by the user, while <code>$row[1]</code> contains only the id of the category.
 <ul>
 <li><strong>Attack vector</strong>: create a category with javascript code in its name (<code>Malicious&lt;script&gt;alert(&quot;categories&quot;)&lt;/script&gt;</code>). Then go to the product page. An alert dialog will pop up.</li>
-<li><strong>Fix</strong>: at line 127, calls <code>htmlentities</code> on <code>row[1]</code>. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 287, so you have to sanitize this line to avoid any alert message in the product page.</li>
+<li><strong>Fix</strong>: at line 128, calls <code>htmlentities</code> on <code>row[1]</code>. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 287, so you have to sanitize this line to avoid any alert message in the product page.</li>
 </ul>
 </li>
 <li><strong>xss_product.php_3_min</strong> (line 267): as for product 1, this echo function is called after fetching all brands. If the user inserts malicious javascript code into a brand name, this code will be executed when the client go to the product page. The test has the same code of <strong>xss_product.php_1_min</strong>.
@@ -67,7 +68,7 @@
 <li><strong>xss_product.php_4_min</strong> (line 287): as for product 2, also in this case if a category is created with malicious code in its name, this code will be executed when the client goes to the product page.
 <ul>
 <li><strong>Attack vector</strong>: create a category with javascript code in its name (<code>Malicious&lt;script&gt;alert(&quot;categories&quot;)&lt;/script&gt;</code>). Then go to the product page. An alert dialog will pop up.</li>
-<li><strong>Fix</strong>: at line 286, calls <code>htmlentities()</code> on <code>row[1]</code>. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 127, so you have to sanitize this line to avoid any alert message in the product page.</li>
+<li><strong>Fix</strong>: at line 286, calls <code>htmlentities()</code> on <code>row[1]</code>. The output will be sanitized. As for brand, also categories will prompt two alert because the categories list is fetched also at line 128, so you have to sanitize this line to avoid any alert message in the product page.</li>
 </ul>
 </li>
 <li><strong>xss_fetchProduct.php_1_min</strong> (line 63, 65 &amp; 67): this echo function outputs data of each not removed product. If a product is created with malicious code in the name, rate and quantity, the code will be executed each time this php code is called.
@@ -119,7 +120,7 @@
 <li><strong>Fix</strong>:sanitize the input with <code>htmlentities()</code></li>
 </ul>
 </li>
-<li><strong>xss_orders.php_11_min</strong>: this echo function is used to populate the select of the products in the orders page. By default, three select rows are generated, so this code is executed three times. If the admin created a product with malicious code in its name, this code will be executed. Only the name is vulnerable, because the id is not inserted by the user.
+<li><strong>xss_orders.php_11_min</strong> (line 111): this echo function is used to populate the select of the products in the orders page. By default, three select rows are generated, so this code is executed three times. If the admin created a product with malicious code in its name, this code will be executed. Only the name is vulnerable, because the id is not inserted by the user.
 <ul>
 <li><strong>Attack vector</strong>: create a product with javascript code in its name, then go to add orders page. Three dialog box will be shown.</li>
 <li><strong>Fix</strong>: sanitize <code>$row['product_name']</code> with <code>htmlentities()</code>.</li>
@@ -155,6 +156,12 @@
 <li><strong>Fix</strong>: sanitize <code>$orderItemData['rate']</code> with <code>htmlentities()</code>.</li>
 </ul>
 </li>
+<li><strong>xss_orders.php_32_min</strong> (line 365): there are 2 echo functions in this line: the first prints out the id of the product, that it is not vulnerable because the id is not created by the user (it is an integer autoincremented in the database). The second echo function prints the available quantity of the product already inserted into the order. The attacke can create an order, than edit the quantity of the product, injecting malicious code into it and finally go to the edit order page. The code will be executed.
+<ul>
+<li><strong>Attack vector</strong>: create a new order, edit the product quantity inserted into the order with this javascript code: <code>11&lt;script&gt;alert(&quot;quantity&quot;);&lt;/script&gt;</code>. Finally go to the edit order page. An alert will pop up.</li>
+<li><strong>Fix</strong>: sanitize the output with <code>htmlentities()</code>.</li>
+</ul>
+</li>
 <li><strong>xss_orders.php_35_min</strong> (line 380): in this case, if the user changes the type of the input quantity and insert javascript code and he refreshes the page, the code will be executed.
 <ul>
 <li><strong>Attack vector</strong>: create an order, then go to edit order. Use javascript to change the type of the quantity input to <code>text</code> and change the value with this string <code>&quot;\&quot;/&gt;&lt;script&gt;alert(\&quot;quantity\&quot;)&lt;/script&gt;&lt;input type=\&quot;hidden\&quot;</code>. Refresh the page: a dialog box will pop up.</li>
@@ -173,9 +180,9 @@
 <li><strong>Fix</strong>: same as <strong>xss_orders.php_37_min</strong>.</li>
 </ul>
 </li>
-<li><strong>xss_orders.php_41_min</strong>: this echo function populates a disabled input used to show the sub amount of the order, in the edit order page.
+<li><strong>xss_orders.php_41_min</strong> (line 404): this echo function populates a disabled input used to show the sub amount of the order, in the edit order page.
 <ul>
-<li><strong>Attack vector</strong> (line 404): create a new order and with javascript change the value of the subAmount hidden input to <code>&quot;/&gt;&lt;script&gt;alert(&quot;subAmountValue&quot;)&lt;/script&gt;&lt;input type=&quot;hidden&quot;</code>. Then go to edit order. A pop up will show up.</li>
+<li><strong>Attack vector</strong>: create a new order and with javascript change the value of the subAmount hidden input to <code>&quot;/&gt;&lt;script&gt;alert(&quot;subAmountValue&quot;)&lt;/script&gt;&lt;input type=&quot;hidden&quot;</code>. Then go to edit order. A pop up will show up.</li>
 <li><strong>Fix</strong>: sanitize with <code>htmlentities()</code>.</li>
 </ul>
 </li>
@@ -227,7 +234,7 @@
 <li><strong>Fix</strong>: same as <strong>xss_orders.php_50_min</strong>.</li>
 </ul>
 </li>
-<li><strong>xss_orders.pgp_52_min</strong>: this echo functio prints the <em>gstn</em> in the edit order page. There is no way to insert this value during the creation of an order, so it is mandatory to create an order, edit it inserting in this input field some code, and refresh the page.
+<li><strong>xss_orders.pgp_52_min</strong> line(439): this echo functio prints the <em>gstn</em> in the edit order page. There is no way to insert this value during the creation of an order, so it is mandatory to create an order, edit it inserting in this input field some code, and refresh the page.
 <ul>
 <li><strong>Attack vector</strong>: edit an existing order. Isert in the <em>gstn</em> field this string <code>&quot;/&gt;&lt;script&gt;alert(&quot;hello&quot;)&lt;/script&gt;&lt;input type=&quot;hidden&quot;</code>. Refresh the page. An alert will pop up.</li>
 <li><strong>Fix</strong>: sanitize the input with <code>htmlentities()</code>.</li>
@@ -293,7 +300,7 @@
 <li><strong>Fix</strong>: sanitize the output of the echo function with <code>htmlentities()</code>.</li>
 </ul>
 </li>
-<li><strong>xss_fetchUserPhp1Min</strong>: if the admin add a new user and insert javascript code into the username, it will be executed on loading the manage users page.
+<li><strong>xss_fetchUser.php_1_min</strong> (line 37): if the admin add a new user and insert javascript code into the username, it will be executed on loading the manage users page.
 <ul>
 <li><strong>Attack vector</strong>: create a new user with username <code>user&lt;script&gt;alert(&quot;user&quot;)&lt;/script&gt;</code>. The code will be executed when the user is fetched.</li>
 <li><strong>Fix</strong>: sanitize line 37 (username) with <code>htmlentities()</code>.</li>
@@ -302,43 +309,48 @@
 </ul>
 <h2 id="false-positives">False Positives</h2>
 <ul>
+<li>All the following files print default message, not written by the user but by the web master. They can be considered false positives because the array printed contains a boolean statement which says if the operation was performad correctly, and a message field with a string that is printed to tell the user if the operation was completed correctly.
+<ul>
+<li><strong>xss_createBrand.php_1_min</strong></li>
+<li><strong>xss_removeBrand.php_1_min</strong></li>
+<li><strong>xss_editBrand.php_1_min</strong></li>
+<li><strong>xss_createCategories.php_1_min</strong></li>
+<li><strong>xss_removeCategories.php_1_min</strong></li>
+<li><strong>xss_editCategories.php_1_min</strong></li>
+<li><strong>xss_editProduct.php_1_min</strong></li>
+<li><strong>xss_editProductImage.php_1_min</strong></li>
+<li><strong>xss_createProduct.php_1_min</strong></li>
+<li><strong>xss_removeProduct.php_1_min</strong></li>
+<li><strong>xss_changeBio.php_1_min</strong></li>
+<li><strong>xss_changePassword.php_1_min</strong></li>
+<li><strong>xss_changeUsername.php_1_min</strong></li>
+<li><strong>xss_createOrder.php_1_min</strong></li>
+<li><strong>xss_editOrder.php_1_min</strong></li>
+<li><strong>xss_editPayment.php_1_min</strong></li>
+<li><strong>xss_editUser.php_1_min</strong></li>
+<li><strong>xss_removeUser.php_1_min</strong></li>
+</ul>
+</li>
 <li><strong>xss_dashboard.php_3_min</strong>: the echo function prints out the number of rows returned by the SQL query. There is no user input printed because this number is calculated by <code>mysqli_num_rows()</code> function.</li>
 <li><strong>xss_dashboard.php_4_min</strong>: the echo function prints out the number of rows returned by the SQL query, using <code>mysqli_num_rows()</code>.</li>
 <li><strong>xss_dashboard.php_5_min</strong>: the echo function prints out the number of rows returned by the SQL query, using <code>mysqli_num_rows()</code></li>
-<li><strong>xss_dashboard.php_11_min</strong>: there is no way to exploit the total order amount to inject some malicious code. If you try to add a new product with amount that has html code in it, and then you try to create an order from it, you won't be able to see this order anywhere after it has been created (probably because the amount during the creation is set  to <code>Nan</code>).</li>
-<li><strong>xss_createBrand.php_1_min</strong>: <code>echo json_encode($valid);</code> outputs a string not written by the user that asserts that the query has been successful.</li>
-<li><strong>xss_removeBrand.php_1_min</strong>: <code>echo json_encode($valid);</code> outputs a string that states the result status of an execution of a query. This string is not written by the user.</li>
-<li><strong>xss_editBrand.php_1_min</strong>: the echo funtion outputs a string not written by the user.</li>
-<li><strong>xss_fetchSelectedBrand.php_1_min</strong>: <code>echo json_encode($row);</code> is used to return a json object used to populate the editBrand pop-up dialog box. However in the input text the text is not formated as HTML so the attacker can't exploit this echo call to insert malicious code, and the admin will be able to see the source code inserted by the attacker.
-<img src="file:////home/alberto/Documents/report-sectest/images/fetchselectedBrand.png" alt="fetch selected Brand"></li>
-<li><strong>xss_editBrand.php_1_min</strong>: it outputs a not modifiable string to confirm the query has been performed.</li>
-<li><strong>xss_createCategories.php_1_min</strong>: the echo function prints a pre-defined string used to tell the user the if the query has been performed.</li>
-<li><strong>xss_removeCategories.php_1_min</strong>: the echo function prints if the query has been performed correctly or not. The user can't insert custom value for this string.</li>
-<li><strong>fetchSelectedCategories.php_1_min</strong>: the echo function populates the editCategory pop-up dialog, but the the name of the category is not formatted in HTML, but in plain text, so the attacker can't exploits this sink.</li>
-<li><strong>xss_editCategories.php_1_min</strong>: the echo function outputs a string written by the webmaster to confirm the edit category action has been performed correctly.</li>
-<li><strong>xss_editProduct.php_1_min</strong>: the echo funtion prints a message to state the query has been performed correctly. This message is not written by the user.</li>
-<li><strong>xss_editProductImage.php_1_min</strong>: the echo function print a message, not written by the user that states if the query has been successfully executed.</li>
+<li><strong>xss_dashboard.php_11_min</strong>: this echo function prints the total order of a given username. It is obtained by summing all the grand total values relative to a given username (line 22: <code>SELECT users.username , SUM(orders.grand_total) as totalorder FROM orders INNER JOIN users ON orders.user_id = users.user_id WHERE orders.order_status = 1 GROUP BY orders.user_id</code>). The sum is done calling the <code>SUM</code> query from database, so the values are manipulated before printing. There is no way to insert malicious code in this field.</li>
 <li><strong>xss_fetchProductImageUrl.php_1_min</strong>: this php function is called when the user wants to edit the image. There is no way to inject malicious code into the name of the image because there is a control if the file has an image extension.
 <img src="file:////home/alberto/Documents/report-sectest/images/editImage.png" alt="edit image"></li>
-<li><strong>xss_createProduct.php_1_min</strong>: <code>echo json_encode($valid);</code> prints a confirmation message not written by the user with the result of the creation of the product.</li>
-<li><strong>xss_removeProduct.php_1_min</strong>: this echo function prints the result status of the query of removing a product, but this status is a string not written by the user.</li>
-<li><strong>xss_fetchSelectedProduct.php_1_min</strong>: there is no way to inject malicious code via this echo function.</li>
-<li><strong>xss_changeBio.php_1_min</strong>: it prints a default message if the bio has been changed correctly. It is not written by the user.</li>
-<li><strong>xss_changePassword.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_changeUsername.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_createOrder.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_editOrder.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_editPayment.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_editUser.php_1_min</strong>: it prints a default message, not written by the user.</li>
-<li><strong>xss_fetchOrderData.php_1_min</strong>: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not print the name or the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).</li>
-<li><strong>xss_fetchSelectedUser.php_1_min</strong>: this echo funtion return a json formatted object used to populate the editUser dialog box. If the name contains malicious code, it will be printed in the input text, so there won't be any vulnerability, because also the HTML code will be printed, as plain text.</li>
-<li><strong>xss_orders.php_20_min</strong>: this echo function prints the date of the order. The date of the order is already sanitized because the input field for enetering the day accept only date format string.</li>
-<li><strong>xss_orders.php_32_min</strong>: there is no way to inject malicious code into the available quantity paragraph created in the edit order page, because you can't create an order with corrupted quantity and if you try to insert it later with the edit order form, this quantity is not loaded.</li>
-<li><strong>xss_removeUser.php_1_min</strong>: this echo function outputs a message not written by the user, so it is not vulnerable to xss attacks.</li>
+<li><strong>xss_orders.php_20_min</strong>: this echo function prints the date of the order. The date of the order is already sanitized because the input field for entering the day accept only date format string.</li>
 <li><strong>xss_setting.php_2_min</strong>: this echo function prints the user id retrieved from the <code>$_SESSION</code> array. It is set on the server side and it is not possible to access it from client side.</li>
 <li><strong>xss_setting.php_4_min</strong>: as for <strong>xss_setting.php_2_min</strong>, also this echo functon populate an input field with the user id, retrieved from the <code>$_SESSION</code> array, created and handled server side.</li>
 <li><strong>xss_setting.php_5_min</strong>: this echo function populate an input field with the user id, retrieved from the <code>$_SESSION</code> array, so it is not vulnerable.</li>
 <li><strong>xss_ssp.php_1_min</strong>: it is an example of a library file. It is not used in the website.</li>
+</ul>
+<h2 id="possible-true-positives-no-tests-for-them-not-sure">Possible true positives (no tests for them, not sure)</h2>
+<ul>
+<li><strong>xss_fetchSelectedBrand.php_1_min</strong>: <code>echo json_encode($row);</code> is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.
+<img src="file:////home/alberto/Documents/report-sectest/images/fetchselectedBrand.png" alt="fetch selected Brand"></li>
+<li><strong>fetchSelectedCategories.php_1_min</strong>: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is cconsidered here as a false positive.</li>
+<li><strong>xss_fetchSelectedProduct.php_1_min</strong>: same as above cases.</li>
+<li><strong>xss_fetchOrderData.php_1_min</strong>: even if this php file perform different tasks compared to the above one, it always return a JSON encoded file from a POST request. It may be vulnerable because <code>json_encode()</code> is not safe, but no tests are provided, so it is considered false positive.</li>
+<li><strong>xss_fetchSelectedUser.php_1_min</strong>: also this fetch function is used to poplate the edit user page, using JSON encoded object. No tests for this file, so it is considered false positive.</li>
 </ul>
 
     </body>

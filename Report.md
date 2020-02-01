@@ -6,6 +6,7 @@
 
 
 This report goal is to find XSS vulnerabilities in the project `inventory-management-system`. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.
+All the test were created with an already populated database, and then every test was changed to clean and repopulate every time the database. The products created directly from Java have the default image.
 
 ## True Positives
 
@@ -157,40 +158,42 @@ if(mysqli_num_rows($result) > 0) {
 
 
 ## False Positives
-
+- All the following files print default message, not written by the user but by the web master. They can be considered false positives because the array printed contains a boolean statement which says if the operation was performad correctly, and a message field with a string that is printed to tell the user if the operation was completed correctly.
+  - **xss_createBrand.php_1_min**
+  - **xss_removeBrand.php_1_min**
+  - **xss_editBrand.php_1_min**
+  - **xss_createCategories.php_1_min**
+  - **xss_removeCategories.php_1_min**
+  - **xss_editCategories.php_1_min**
+  - **xss_editProduct.php_1_min**
+  - **xss_editProductImage.php_1_min**
+  - **xss_createProduct.php_1_min**
+  - **xss_removeProduct.php_1_min**
+  - **xss_changeBio.php_1_min**
+  - **xss_changePassword.php_1_min**
+  - **xss_changeUsername.php_1_min**
+  - **xss_createOrder.php_1_min**
+  - **xss_editOrder.php_1_min**
+  - **xss_editPayment.php_1_min**
+  - **xss_editUser.php_1_min**
+  - **xss_removeUser.php_1_min**
 - **xss_dashboard.php_3_min**: the echo function prints out the number of rows returned by the SQL query. There is no user input printed because this number is calculated by `mysqli_num_rows()` function. 
 - **xss_dashboard.php_4_min**: the echo function prints out the number of rows returned by the SQL query, using `mysqli_num_rows()`.
 - **xss_dashboard.php_5_min**: the echo function prints out the number of rows returned by the SQL query, using `mysqli_num_rows()`
-- **xss_dashboard.php_11_min**: there is no way to exploit the total order amount to inject some malicious code. If you try to add a new product with amount that has html code in it, and then you try to create an order from it, you won't be able to see this order anywhere after it has been created (probably because the amount during the creation is set  to `Nan`). 
-- **xss_createBrand.php_1_min**: `echo json_encode($valid);` outputs a string not written by the user that asserts that the query has been successful.
-- **xss_removeBrand.php_1_min**: `echo json_encode($valid);` outputs a string that states the result status of an execution of a query. This string is not written by the user.
-- **xss_editBrand.php_1_min**: the echo funtion outputs a string not written by the user.
-- **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json object used to populate the editBrand pop-up dialog box. However in the input text the text is not formated as HTML so the attacker can't exploit this echo call to insert malicious code, and the admin will be able to see the source code inserted by the attacker.
-![fetch selected Brand](./images/fetchselectedBrand.png)
-- **xss_editBrand.php_1_min**: it outputs a not modifiable string to confirm the query has been performed.
-- **xss_createCategories.php_1_min**: the echo function prints a pre-defined string used to tell the user the if the query has been performed.
-- **xss_removeCategories.php_1_min**: the echo function prints if the query has been performed correctly or not. The user can't insert custom value for this string.
-- **fetchSelectedCategories.php_1_min**: the echo function populates the editCategory pop-up dialog, but the the name of the category is not formatted in HTML, but in plain text, so the attacker can't exploits this sink.
-- **xss_editCategories.php_1_min**: the echo function outputs a string written by the webmaster to confirm the edit category action has been performed correctly.
-- **xss_editProduct.php_1_min**: the echo funtion prints a message to state the query has been performed correctly. This message is not written by the user.
-- **xss_editProductImage.php_1_min**: the echo function print a message, not written by the user that states if the query has been successfully executed.
+- **xss_dashboard.php_11_min**: this echo function prints the total order of a given username. It is obtained by summing all the grand total values relative to a given username (line 22: `SELECT users.username , SUM(orders.grand_total) as totalorder FROM orders INNER JOIN users ON orders.user_id = users.user_id WHERE orders.order_status = 1 GROUP BY orders.user_id`). The sum is done calling the `SUM` query from database, so the values are manipulated before printing. There is no way to insert malicious code in this field.
 - **xss_fetchProductImageUrl.php_1_min**: this php function is called when the user wants to edit the image. There is no way to inject malicious code into the name of the image because there is a control if the file has an image extension.
 ![edit image](./images/editImage.png)
-- **xss_createProduct.php_1_min**: `echo json_encode($valid);` prints a confirmation message not written by the user with the result of the creation of the product.
-- **xss_removeProduct.php_1_min**: this echo function prints the result status of the query of removing a product, but this status is a string not written by the user.
-- **xss_fetchSelectedProduct.php_1_min**: there is no way to inject malicious code via this echo function.
-- **xss_changeBio.php_1_min**: it prints a default message if the bio has been changed correctly. It is not written by the user.
-- **xss_changePassword.php_1_min**: it prints a default message, not written by the user.
-- **xss_changeUsername.php_1_min**: it prints a default message, not written by the user.
-- **xss_createOrder.php_1_min**: it prints a default message, not written by the user.
-- **xss_editOrder.php_1_min**: it prints a default message, not written by the user.
-- **xss_editPayment.php_1_min**: it prints a default message, not written by the user.
-- **xss_editUser.php_1_min**: it prints a default message, not written by the user.
-- **xss_fetchOrderData.php_1_min**: this function retrieves order data to populate the edit payment dialog box, accessible from the payment button located in the action menu of the order. It does not print the name or the number of the client, so it is not vulnerable to xss attack (it prints the amount to be paid, that it is not vulnerable).
-- **xss_fetchSelectedUser.php_1_min**: this echo funtion return a json formatted object used to populate the editUser dialog box. If the name contains malicious code, it will be printed in the input text, so there won't be any vulnerability, because also the HTML code will be printed, as plain text.
-- **xss_orders.php_20_min**: this echo function prints the date of the order. The date of the order is already sanitized because the input field for enetering the day accept only date format string.
-- **xss_removeUser.php_1_min**: this echo function outputs a message not written by the user, so it is not vulnerable to xss attacks.
+- **xss_orders.php_20_min**: this echo function prints the date of the order. The date of the order is already sanitized because the input field for entering the day accept only date format string.
 - **xss_setting.php_2_min**: this echo function prints the user id retrieved from the `$_SESSION` array. It is set on the server side and it is not possible to access it from client side.
 -  **xss_setting.php_4_min**: as for **xss_setting.php_2_min**, also this echo functon populate an input field with the user id, retrieved from the `$_SESSION` array, created and handled server side.
 -  **xss_setting.php_5_min**: this echo function populate an input field with the user id, retrieved from the `$_SESSION` array, so it is not vulnerable.
 -  **xss_ssp.php_1_min**: it is an example of a library file. It is not used in the website.
+
+## Possible true positives (no tests for them, not sure)
+
+- **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.
+![fetch selected Brand](./images/fetchselectedBrand.png)
+- **fetchSelectedCategories.php_1_min**: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is cconsidered here as a false positive.
+- **xss_fetchSelectedProduct.php_1_min**: same as above cases.
+- **xss_fetchOrderData.php_1_min**: even if this php file perform different tasks compared to the above one, it always return a JSON encoded file from a POST request. It may be vulnerable because `json_encode()` is not safe, but no tests are provided, so it is considered false positive.
+- **xss_fetchSelectedUser.php_1_min**: also this fetch function is used to poplate the edit user page, using JSON encoded object. No tests for this file, so it is considered false positive.
