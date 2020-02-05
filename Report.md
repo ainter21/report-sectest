@@ -5,8 +5,16 @@
 ### Project: inventory-management-system
 
 
-This report goal is to find XSS vulnerabilities in the project `inventory-management-system`. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.
+This report goal is to find XSS vulnerabilities in the project `inventory-management-system`. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function. Attack vectors and fixes can be similar through multiple true positives because files are very similar (they perform similar operations so lots of code is repeated), so the explaination can be a little redundant. This report is written to offer an immediate view on what are the problems for every file and what are the solutions adopted to fix the vulenrabilities. The majority of attack vectors try to make an alert appear on to the screen, because users can tricked by convincing them to click to continue and maybe retrieve more information.
 All the test were created with an already populated database, and then every test was changed to clean and repopulate every time the database. The products created directly from Java have the default image.
+The result analysis produced:
+- 41 True Positives
+- 28 false Positives
+- 5 considered as false positives because no tests are provided, but the function used can be vulnerable (`json_encode` is not safe, but no attack vector are provided. As a developer I would however suggest to sanitze the output before printing in JSON format).
+In case of problem in opening files these are the github links to the report, the fixed source code and the tests:
+- report: https://github.com/ainter21/report-sectest.git
+- fixed source code: https://github.com/ainter21/inventory-management-system.git
+- test cases: https://github.com/ainter21/sectest-project.git
 
 ## True Positives
 
@@ -55,9 +63,19 @@ if(mysqli_num_rows($result) > 0) {
 - **xss_fetchOrder.php_1_min** (line 56 & 58): this method is called to retrieve all the orders. There are some fields that are vulnerable to xss attack. 
   - **Attack vector**: create an order with malicious code in the `name` of the `client` and in the client. This code will be executed when the user goes to the order page. The date input field is not vulnerable because there is an automatic sanitisation.
   - **Fix**: sanitize `$row[2]` and `$row[3]` of the array that is generated to return using `htmlentities()`.
-- **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code will be executed in the new window generated for the report list table. 
-  - **Attack vector**: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.
-  - **Fix**: sanitize the table entries with `htmlentities()`.
+- **xss_getOrderReport.php_1_min**: if an order contains malicious code, this code will be executed in the new window generated for the report list table. The test provided executes and it passes, but it is longer than the other tests and the console outputs these lines:
+```
+###!!! [Parent][MessageChannel] Error: (msgtype=0x59001A,name=PHttpChannel::Msg_DeleteSelf) Channel error: cannot send/recv
+
+console.error: (new Error("SessionFile is closed", "resource:///modules/sessionstore/SessionFile.jsm", 433))
+ExceptionHandler::GenerateDump cloned child 8709
+ExceptionHandler::SendContinueSignalToChild sent continue signal to child
+ExceptionHandler::WaitForContinueSignal waiting for continue signal...
+[GFX1-]: Receive IPC close with reason=AbnormalShutdown
+Exiting due to channel error.
+```
+  - **Attack vector**: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed. in this case new HTML components are added to the page.
+  - **Fix**: sanitize the table entries used to populate the report with `htmlentities()`.
 - **xss_orders.php_6_min** (line 37): this echo function prints the id of the order to be edited. This id is directly taken from the query parameter. The attacker can insert some code into this parameter to perform an xss attack.
   - **Attack vector**: use selenium to navigate to this link: `http://localhost/inventory-management-system/orders.php?o=editOrd&i=8<script>alert(\"id\")</script>`. An alert will pop up.
   - **Fix**:sanitize the input with `htmlentities()`
@@ -191,9 +209,8 @@ if(mysqli_num_rows($result) > 0) {
 
 ## Possible true positives (no tests for them, not sure)
 
-- **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.
-![fetch selected Brand](./images/fetchselectedBrand.png)
-- **fetchSelectedCategories.php_1_min**: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is cconsidered here as a false positive.
+- **xss_fetchSelectedBrand.php_1_min**: `echo json_encode($row);` is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the php file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.
+- **fetchSelectedCategories.php_1_min**: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is considered here as a false positive.
 - **xss_fetchSelectedProduct.php_1_min**: same as above cases.
 - **xss_fetchOrderData.php_1_min**: even if this php file perform different tasks compared to the above one, it always return a JSON encoded file from a POST request. It may be vulnerable because `json_encode()` is not safe, but no tests are provided, so it is considered false positive.
 - **xss_fetchSelectedUser.php_1_min**: also this fetch function is used to poplate the edit user page, using JSON encoded object. No tests for this file, so it is considered false positive.

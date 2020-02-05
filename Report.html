@@ -25,8 +25,18 @@
 <h3 id="alberto-giust-id-211460">Alberto Giust ID 211460</h3>
 <h3 id="security-testing">Security Testing</h3>
 <h3 id="project-inventory-management-system">Project: inventory-management-system</h3>
-<p>This report goal is to find XSS vulnerabilities in the project <code>inventory-management-system</code>. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function.
-All the test were created with an already populated database, and then every test was changed to clean and repopulate every time the database. The products created directly from Java have the default image.</p>
+<p>This report goal is to find XSS vulnerabilities in the project <code>inventory-management-system</code>. Pixy was used to identify the possible sinks and all the outputs were analyzed and divided between true and false positives. For the true positives an attack vector is proposed (applied in the tests with selenium) and a possible fix that is applied to the echo function. Attack vectors and fixes can be similar through multiple true positives because files are very similar (they perform similar operations so lots of code is repeated), so the explaination can be a little redundant. This report is written to offer an immediate view on what are the problems for every file and what are the solutions adopted to fix the vulenrabilities. The majority of attack vectors try to make an alert appear on to the screen, because users can tricked by convincing them to click to continue and maybe retrieve more information.
+All the test were created with an already populated database, and then every test was changed to clean and repopulate every time the database. The products created directly from Java have the default image.
+The result analysis produced:</p>
+<ul>
+<li>41 True Positives</li>
+<li>28 false Positives</li>
+<li>5 considered as false positives because no tests are provided, but the function used can be vulnerable (<code>json_encode</code> is not safe, but no attack vector are provided. As a developer I would however suggest to sanitze the output before printing in JSON format).
+In case of problem in opening files these are the github links to the report, the fixed source code and the tests:</li>
+<li>report: <a href="https://github.com/ainter21/report-sectest.git">https://github.com/ainter21/report-sectest.git</a></li>
+<li>fixed source code: <a href="https://github.com/ainter21/inventory-management-system.git">https://github.com/ainter21/inventory-management-system.git</a></li>
+<li>test cases: <a href="https://github.com/ainter21/sectest-project.git">https://github.com/ainter21/sectest-project.git</a></li>
+</ul>
 <h2 id="true-positives">True Positives</h2>
 <ul>
 <li><strong>xss_dashboard.php_10_min</strong> (line 153): outputs the username in the orders table. If the username is a HTML formatted string, it will be printed as it is without controls, so it can be used insert malicious code. The <strong>User Wise Order</strong> is only seen by the admin.
@@ -108,12 +118,20 @@ All the test were created with an already populated database, and then every tes
 <li><strong>Fix</strong>: sanitize <code>$row[2]</code> and <code>$row[3]</code> of the array that is generated to return using <code>htmlentities()</code>.</li>
 </ul>
 </li>
-<li><strong>xss_getOrderReport.php_1_min</strong>: if an order contains malicious code, this code will be executed in the new window generated for the report list table.
-<ul>
-<li><strong>Attack vector</strong>: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed.</li>
-<li><strong>Fix</strong>: sanitize the table entries with <code>htmlentities()</code>.</li>
+<li><strong>xss_getOrderReport.php_1_min</strong>: if an order contains malicious code, this code will be executed in the new window generated for the report list table. The test provided executes and it passes, but it is longer than the other tests and the console outputs these lines:</li>
 </ul>
-</li>
+<pre><code><code><div>###!!! [Parent][MessageChannel] Error: (msgtype=0x59001A,name=PHttpChannel::Msg_DeleteSelf) Channel error: cannot send/recv
+
+console.error: (new Error(&quot;SessionFile is closed&quot;, &quot;resource:///modules/sessionstore/SessionFile.jsm&quot;, 433))
+ExceptionHandler::GenerateDump cloned child 8709
+ExceptionHandler::SendContinueSignalToChild sent continue signal to child
+ExceptionHandler::WaitForContinueSignal waiting for continue signal...
+[GFX1-]: Receive IPC close with reason=AbnormalShutdown
+Exiting due to channel error.
+</div></code></code></pre>
+<ul>
+<li><strong>Attack vector</strong>: create an order with javascript code inside name and contact number, then go to report page and create the report. In the new window the code will be executed. in this case new HTML components are added to the page.</li>
+<li><strong>Fix</strong>: sanitize the table entries used to populate the report with <code>htmlentities()</code>.</li>
 <li><strong>xss_orders.php_6_min</strong> (line 37): this echo function prints the id of the order to be edited. This id is directly taken from the query parameter. The attacker can insert some code into this parameter to perform an xss attack.
 <ul>
 <li><strong>Attack vector</strong>: use selenium to navigate to this link: <code>http://localhost/inventory-management-system/orders.php?o=editOrd&amp;i=8&lt;script&gt;alert(\&quot;id\&quot;)&lt;/script&gt;</code>. An alert will pop up.</li>
@@ -345,9 +363,8 @@ All the test were created with an already populated database, and then every tes
 </ul>
 <h2 id="possible-true-positives-no-tests-for-them-not-sure">Possible true positives (no tests for them, not sure)</h2>
 <ul>
-<li><strong>xss_fetchSelectedBrand.php_1_min</strong>: <code>echo json_encode($row);</code> is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.
-<img src="file:////home/alberto/Documents/report-sectest/images/fetchselectedBrand.png" alt="fetch selected Brand"></li>
-<li><strong>fetchSelectedCategories.php_1_min</strong>: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is cconsidered here as a false positive.</li>
+<li><strong>xss_fetchSelectedBrand.php_1_min</strong>: <code>echo json_encode($row);</code> is used to return a json object used to populate the editBrand pop-up dialog box. There could be some vulnerability if the php file is directly called with a POST request. However test case for trying to fix this vulnerability is not made, so it is considered as false positive. An attacker may perform some Man in the middle attack and induce the victim to perform a request to this file, that it is not commonly accessible directly by the user.</li>
+<li><strong>fetchSelectedCategories.php_1_min</strong>: as for the above case, maybe it is possible to exploit this echo printing function, but no tests are made, so it is considered here as a false positive.</li>
 <li><strong>xss_fetchSelectedProduct.php_1_min</strong>: same as above cases.</li>
 <li><strong>xss_fetchOrderData.php_1_min</strong>: even if this php file perform different tasks compared to the above one, it always return a JSON encoded file from a POST request. It may be vulnerable because <code>json_encode()</code> is not safe, but no tests are provided, so it is considered false positive.</li>
 <li><strong>xss_fetchSelectedUser.php_1_min</strong>: also this fetch function is used to poplate the edit user page, using JSON encoded object. No tests for this file, so it is considered false positive.</li>
